@@ -3,6 +3,7 @@ package cromwell.pipeline.service
 import java.net.URLEncoder
 import java.nio.file.Path
 
+import cromwell.pipeline.datastorage.dto._
 import cromwell.pipeline.datastorage.dto.File.UpdateFileRequest
 import cromwell.pipeline.datastorage.dto.{ GitLabVersion, PipelineVersion, Project, ProjectFile, Repository }
 import cromwell.pipeline.utils.{ GitLabConfig, HttpStatusCodes }
@@ -106,6 +107,29 @@ class GitLabProjectVersioning(httpClient: HttpClient, config: GitLabConfig)
           else {
             val parsedVersions: JsResult[Seq[GitLabVersion]] = Json.parse(resp.body).validate[List[GitLabVersion]]
             parsedVersions match {
+              case JsSuccess(value, _) =>
+                Right(value)
+              case JsError(errors) => Left(VersioningException(s"Could not parse GitLab response. (errors: $errors)"))
+            }
+          }
+      )
+      .recover { case e: Throwable => Left(VersioningException(e.getMessage)) }
+  }
+
+  override def getFileCommits(project: Project, path: Path)(
+    implicit ec: ExecutionContext
+  ): AsyncResult[Seq[FileCommit]] = {
+    val commitsUrl: String =
+      s"${config.url}projects/${project.repository.get.value}/repository/files/${path.toString}"
+    httpClient
+      .get(url = commitsUrl, headers = config.token)
+      .map(
+        response =>
+          if (response.status != HttpStatusCodes.OK)
+            Left(VersioningException(s"Could not take the file commits. Response status: ${response.status}"))
+          else {
+            val commitsBody: JsResult[Seq[FileCommit]] = Json.parse(response.body).validate[Seq[FileCommit]]
+            commitsBody match {
               case JsSuccess(value, _) => Right(value)
               case JsError(errors)     => Left(VersioningException(s"Could not parse GitLab response. (errors: $errors)"))
             }
@@ -117,6 +141,24 @@ class GitLabProjectVersioning(httpClient: HttpClient, config: GitLabConfig)
   override def getFileVersions(project: Project, path: Path)(
     implicit ec: ExecutionContext
   ): AsyncResult[List[GitLabVersion]] = ???
+
+  ): AsyncResult[Seq[Version]] =
+    for {
+      projectVersions <- getProjectVersions(project)
+      fileCommits <- getFileCommits(project, path)
+    } yield {
+      if (projectVersions.isRight && fileCommits.isRight) {
+        val tagsProject = projectVersions.right.get
+        val tagsFiles = fileCommits.right.get
+        Right(for {
+          tagProject <- tagsProject
+          tagFile <- tagsFiles
+          if tagFile.commit_id == tagProject.commit.id
+        } yield tagProject)
+      } else {
+        Left(VersioningException(fileCommits.left.get.message))
+      }
+    }
 
   override def getFilesVersions(project: Project, path: Path)(
     implicit ec: ExecutionContext

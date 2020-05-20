@@ -114,6 +114,11 @@ object Commit {
   implicit val commitFormat: OFormat[Commit] = Json.format[Commit]
 }
 
+final case class FileCommit(commit_id: String)
+object FileCommit {
+  implicit val fileCommitFormat: OFormat[FileCommit] = Json.format[FileCommit]
+}
+
 final case class ProjectFile(path: Path, content: String)
 
 object ProjectFile {

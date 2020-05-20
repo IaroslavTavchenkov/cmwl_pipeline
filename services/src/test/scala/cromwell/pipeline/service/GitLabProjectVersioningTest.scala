@@ -4,8 +4,11 @@ import java.net.URLEncoder
 import java.nio.file.Paths
 
 import akka.http.scaladsl.model.StatusCodes
+import java.nio.file.{ Path, Paths }
+
 import cromwell.pipeline.datastorage.dao.repository.utils.TestProjectUtils
 import cromwell.pipeline.datastorage.dto._
+import cromwell.pipeline.datastorage.dto.{ FileCommit, Project, Version }
 import cromwell.pipeline.utils.{ ApplicationConfig, GitLabConfig, HttpStatusCodes }
 import org.mockito.Mockito.when
 import org.scalatest.concurrent.ScalaFutures
@@ -181,6 +184,66 @@ class GitLabProjectVersioningTest extends AsyncWordSpec with ScalaFutures with M
       }
 
     }
+
+    "getFileCommits" should {
+      val dummyCommitJson: String = s"[${Json.stringify(Json.toJson(dummyFileCommit))}]"
+      val path: Path = Paths.get("tmp/foo.txt")
+      def request(project: Project) =
+        mockHttpClient.get(
+          url = gitLabConfig.url + "projects/" + project.repository.get.value + "/repository/files/" + path.toString,
+          headers = gitLabConfig.token
+        )
+      "return list of Project versions with 200 response" taggedAs Service in {
+        when(request(withRepoProject))
+          .thenReturn(Future.successful(Response(HttpStatusCodes.OK, dummyCommitJson, Map())))
+        gitLabProjectVersioning.getFileCommits(withRepoProject, path).map {
+          _ shouldBe Right(Seq(dummyFileCommit))
+        }
+      }
+      "throw new VersioningException with 400 response" taggedAs Service in {
+        when(request(withRepoProject))
+          .thenReturn(Future.successful(Response(HttpStatusCodes.BadRequest, EmptyBody, Map())))
+        gitLabProjectVersioning.getFileCommits(withRepoProject, path).map {
+          _ shouldBe Left(VersioningException("Could not take the file commits. Response status: 400"))
+        }
+      }
+    }
+
+    "getFileVersions" should {
+      val dummyCommitJson: String = s"[${Json.stringify(Json.toJson(dummyFileCommit))}, ${Json.stringify(Json.toJson(dummyFileCommitAux))}]"
+      val dummyVersionsJson: String = s"[${Json.stringify(Json.toJson(dummyVersion))}]"
+      val path: Path = Paths.get("tmp/foo.txt")
+      def projectVersionRequest(project: Project) =
+        mockHttpClient.get(
+          url = gitLabConfig.url + "projects/" + project.repository.get.value + "/repository/tags",
+          headers = gitLabConfig.token
+        )
+      def fileCommitsRequest(project: Project) =
+        mockHttpClient.get(
+          url = gitLabConfig.url + "projects/" + project.repository.get.value + "/repository/files/" + path.toString,
+          headers = gitLabConfig.token
+        )
+
+      "return list of Project versions with 200 response" taggedAs Service in {
+        when(projectVersionRequest(withRepoProject))
+          .thenReturn(Future.successful(Response(HttpStatusCodes.OK, dummyVersionsJson, Map())))
+        when(fileCommitsRequest(withRepoProject))
+          .thenReturn(Future.successful(Response(HttpStatusCodes.OK, dummyCommitJson, Map())))
+        gitLabProjectVersioning.getFileVersions(withRepoProject, path).map {
+          _ shouldBe Right(Seq(dummyVersion))
+        }
+      }
+
+      "throw new VersioningException" taggedAs Service in {
+        when(projectVersionRequest(withRepoProject))
+          .thenReturn(Future.successful(Response(HttpStatusCodes.BadRequest, EmptyBody, Map())))
+        when(fileCommitsRequest(withRepoProject))
+          .thenReturn(Future.successful(Response(HttpStatusCodes.BadRequest, EmptyBody, Map())))
+        gitLabProjectVersioning.getFileCommits(withRepoProject, path).map {
+          _ shouldBe Left(VersioningException("Could not take the file commits. Response status: 400"))
+        }
+      }
+    }
   }
 
   object ProjectContext {
@@ -195,6 +258,9 @@ class GitLabProjectVersioningTest extends AsyncWordSpec with ScalaFutures with M
     lazy val dummyPipelineVersionHigher: PipelineVersion =
       dummyPipelineVersion.changeVersion(0, dummyPipelineVersion.versions.head + 1)
     lazy val dummyGitLabVersion: GitLabVersion = TestProjectUtils.getDummyGitLabVersion()
+    lazy val dummyVersion: Version = TestProjectUtils.getDummyVersion()
+    lazy val dummyFileCommit: FileCommit = TestProjectUtils.getDummyFileCommit()
+    lazy val dummyFileCommitAux: FileCommit = FileCommit(dummyVersion.commit.id)
   }
 
   object ProjectFileContext {

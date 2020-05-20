@@ -30,8 +30,17 @@ object TestProjectUtils {
     PipelineVersion(v1, v2, v3)
   def getDummyGitLabVersion(
     version: PipelineVersion = getDummyPipeLineVersion(),
+  def getDummyCommit(
+    id: String = randomUuidStr
+  ): Commit = Commit(id)
+  def getDummyVersion(
+    name: String = s"name-$randomUuidStr",
     message: String = s"message-$randomUuidStr",
     target: String = s"target-$randomUuidStr",
     commit: Commit = getDummyCommit()
   ): GitLabVersion = GitLabVersion(version, message, target, commit)
+  ): Version = Version(name, message, target, commit)
+  def getDummyFileCommit(
+    commit_id: String = s"$randomUuidStr"
+  ): FileCommit = FileCommit(commit_id)
 }
