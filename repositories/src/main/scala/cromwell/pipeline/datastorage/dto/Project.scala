@@ -112,10 +112,12 @@ object Visibility {
 final case class FileContent(content: String)
 
 object FileContent {
+//  more convinient
   implicit lazy val validateFileRequestFormat: OFormat[FileContent] = Json.format[FileContent]
 }
 
 final case class ProjectUpdateFileRequest(project: Project, projectFile: ProjectFile, version: Option[Version])
+
 
 object ProjectUpdateFileRequest {
   implicit lazy val projectUpdateFileRequestFormat: OFormat[ProjectUpdateFileRequest] =
@@ -123,5 +125,16 @@ object ProjectUpdateFileRequest {
       .formatNullable[Version])(
       ProjectUpdateFileRequest.apply,
       unlift(ProjectUpdateFileRequest.unapply)
+    )
+}
+
+final case class ProjectGetFileRequest(project: Project, projectFile: ProjectFile, version: Option[Version])
+
+object ProjectGetFileRequest {
+  implicit lazy val projectGetFileRequestFormat: OFormat[ProjectGetFileRequest] =
+    ((JsPath \ "project").format[Project] ~ (JsPath \ "projectFile").format[ProjectFile] ~ (JsPath \ "version")
+      .formatNullable[Version])(
+      ProjectGetFileRequest.apply,
+      unlift(ProjectGetFileRequest.unapply)
     )
 }
