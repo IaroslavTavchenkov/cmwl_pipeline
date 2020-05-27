@@ -26,15 +26,36 @@ class ProjectFileController(wdlService: ProjectFileService)(implicit val executi
         }
       },
       path("files") {
-        post {
-          entity(as[ProjectUpdateFileRequest]) { request =>
-            onComplete(wdlService.uploadFile(request.project, request.projectFile, request.version)) {
-              case Success(Left(e)) => complete(StatusCodes.ImATeapot, e.getMessage) // TODO: change status code
-              case Success(_)       => complete(StatusCodes.OK)
-              case Failure(e)       => complete(StatusCodes.InternalServerError, e.getMessage)
+        concat(
+          post {
+            entity(as[ProjectUpdateFileRequest]) { request =>
+              onComplete(wdlService.uploadFile(request.project, request.projectFile, request.version)) {
+                case Success(Left(e)) => complete(StatusCodes.ImATeapot, e.getMessage) // TODO: change status code
+                case Success(_)       => complete(StatusCodes.OK)
+                case Failure(e)       => complete(StatusCodes.InternalServerError, e.getMessage)
+              }
             }
-          }
-        }
+          },
+          delete {
+            entity(as[ProjectUpdateFileRequest]) { request =>
+              onComplete(wdlService.uploadFile(request.project, request.projectFile, request.version)) {
+                case Success(Left(e)) => complete(StatusCodes.ImATeapot, e.getMessage)
+                case Success(_)       => complete(StatusCodes.OK)
+                case Failure(e)       => complete(StatusCodes.InternalServerError, e.getMessage)
+              }
+            }
+          },
+          get {
+            entity(as[ProjectUpdateFileRequest]) { request =>
+              onComplete(wdlService.getFile(request.project, request.projectFile.path, request.version)) {
+//              do I have e.getMessage
+                case Success(Left(e)) => complete(StatusCodes.InternalServerError)
+                case Success(_)       => complete(StatusCodes.OK)
+                case Failure(e)       => complete(StatusCodes.InternalServerError, e.getMessage)
+              }
+            }
+          },
+        )
       }
     )
 }

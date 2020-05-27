@@ -117,6 +117,8 @@ object FileContent {
 
 final case class ProjectUpdateFileRequest(project: Project, projectFile: ProjectFile, version: Option[Version])
 
+// getFileRequest
+
 object ProjectUpdateFileRequest {
   implicit lazy val projectUpdateFileRequestFormat: OFormat[ProjectUpdateFileRequest] =
     ((JsPath \ "project").format[Project] ~ (JsPath \ "projectFile").format[ProjectFile] ~ (JsPath \ "version")
