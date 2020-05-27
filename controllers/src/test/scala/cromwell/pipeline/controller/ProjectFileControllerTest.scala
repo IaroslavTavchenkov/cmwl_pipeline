@@ -72,5 +72,10 @@ class ProjectFileControllerTest extends AsyncWordSpec with Matchers with Scalate
         }
       }
     }
+
+    "get file" should {
+
+    }
+
   }
 }

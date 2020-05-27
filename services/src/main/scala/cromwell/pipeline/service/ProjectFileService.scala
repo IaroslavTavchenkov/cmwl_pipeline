@@ -30,4 +30,6 @@ class ProjectFileService(womTool: WomToolAPI, projectVersioning: ProjectVersioni
     version: Option[Version]
   ): Future[Either[VersioningException, ProjectFile]] =
     projectVersioning.getFile(project, path, version)
+
+  // TODO deleteFile()
 }
