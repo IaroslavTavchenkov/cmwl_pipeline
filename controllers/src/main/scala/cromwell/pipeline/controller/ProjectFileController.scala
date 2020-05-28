@@ -48,7 +48,6 @@ class ProjectFileController(wdlService: ProjectFileService)(implicit val executi
           get {
             entity(as[ProjectUpdateFileRequest]) { request =>
               onComplete(wdlService.getFile(request.project, request.projectFile.path, request.version)) {
-//              do I have e.getMessage
                 case Success(Left(e)) => complete(StatusCodes.InternalServerError)
                 case Success(_)       => complete(StatusCodes.OK)
                 case Failure(e)       => complete(StatusCodes.InternalServerError, e.getMessage)

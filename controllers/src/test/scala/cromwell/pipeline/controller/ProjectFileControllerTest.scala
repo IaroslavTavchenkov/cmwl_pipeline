@@ -4,20 +4,13 @@ import java.nio.file.Paths
 
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import cromwell.pipeline.datastorage.dao.repository.utils.{ TestProjectUtils, TestUserUtils }
-import cromwell.pipeline.datastorage.dto.{
-  Commit,
-  FileContent,
-  ProjectFile,
-  ProjectUpdateFileRequest,
-  ValidationError,
-  Version
-}
+import cromwell.pipeline.datastorage.dao.repository.utils.{TestProjectUtils, TestUserUtils}
+import cromwell.pipeline.datastorage.dto.{Commit, FileContent, ProjectFile, ProjectGetFileRequest, ProjectUpdateFileRequest, ValidationError, Version}
 import cromwell.pipeline.datastorage.utils.auth.AccessTokenContent
-import cromwell.pipeline.service.{ ProjectFileService, VersioningException }
+import cromwell.pipeline.service.{ProjectFileService, VersioningException}
 import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 import org.mockito.Mockito.when
-import org.scalatest.{ AsyncWordSpec, Matchers }
+import org.scalatest.{AsyncWordSpec, Matchers}
 import org.scalatestplus.mockito.MockitoSugar
 
 import scala.concurrent.Future
@@ -74,7 +67,16 @@ class ProjectFileControllerTest extends AsyncWordSpec with Matchers with Scalate
     }
 
     "get file" should {
+      val version = Version("v.0.0.2", "commit message", "this project", Commit("commit_12"))
+      val accessToken = AccessTokenContent(TestUserUtils.getDummyUserId.value)
+      val project = TestProjectUtils.getDummyProject()
+      val projectFile = ProjectFile(Paths.get("folder/test.txt"), "file context")
+      val request = ProjectGetFileRequest(project, projectFile, Some(version))
 
+      "return OK response for valid request" taggedAs Controller in {
+        when(projectFileService.getFile(project, projectFile.path, Some(version)))
+          .thenReturn(Future.successful(Right("Success")))
+      }
     }
 
   }
