@@ -33,7 +33,8 @@ class ProjectControllerItTest
 
   private val dummyUser = TestUserUtils.getDummyUser()
 
-  "ProjectController" when {
+  "" +
+    "ProjectController" when {
     "getProjectByName" should {
       "return a project with the same name" in {
         val dummyProject =

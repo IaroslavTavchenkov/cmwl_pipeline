@@ -131,10 +131,10 @@ object ProjectUpdateFileRequest {
 final case class ProjectGetFileRequest(project: Project, projectFile: ProjectFile, version: Option[Version])
 
 object ProjectGetFileRequest {
-  implicit lazy val projectUpdateFileRequestFormat: OFormat[ProjectUpdateFileRequest] =
+  implicit lazy val projectGetFileRequestFormat: OFormat[ProjectGetFileRequest] =
     ((JsPath \ "project").format[Project] ~ (JsPath \ "projectFile").format[ProjectFile] ~ (JsPath \ "version")
       .formatNullable[Version])(
-      ProjectUpdateFileRequest.apply,
-      unlift(ProjectUpdateFileRequest.unapply)
+      ProjectGetFileRequest.apply,
+      unlift(ProjectGetFileRequest.unapply)
     )
 }

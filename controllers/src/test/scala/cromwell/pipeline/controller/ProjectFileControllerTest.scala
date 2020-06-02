@@ -73,9 +73,13 @@ class ProjectFileControllerTest extends AsyncWordSpec with Matchers with Scalate
       val projectFile = ProjectFile(Paths.get("folder/test.txt"), "file context")
       val request = ProjectGetFileRequest(project, projectFile, Some(version))
 
+//     TODO  project id + filepath with query params  || /files/projectid/path
       "return OK response for valid request" taggedAs Controller in {
         when(projectFileService.getFile(project, projectFile.path, Some(version)))
-          .thenReturn(Future.successful(Right("Success")))
+          .thenReturn(Future.successful(Right(projectFile)))
+        Get("/files/try?projectId&&path") ~> projectFileController.route(accessToken) ~> check {
+          status shouldBe StatusCodes.OK
+        }
       }
     }
 
