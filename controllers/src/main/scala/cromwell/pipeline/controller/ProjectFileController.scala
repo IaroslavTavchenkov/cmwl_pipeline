@@ -1,15 +1,17 @@
 package cromwell.pipeline.controller
 
+import java.nio.file.{Paths}
+
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import cromwell.pipeline.datastorage.dto.{ FileContent, ProjectGetFileRequest, ProjectUpdateFileRequest }
+import cromwell.pipeline.datastorage.dto.{FileContent, ProjectGetFileRequest, ProjectUpdateFileRequest}
 import cromwell.pipeline.datastorage.utils.auth.AccessTokenContent
 import cromwell.pipeline.service.ProjectFileService
 import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
 import scala.concurrent.ExecutionContext
-import scala.util.{ Failure, Success }
+import scala.util.{Failure, Success}
 
 class ProjectFileController(wdlService: ProjectFileService)(implicit val executionContext: ExecutionContext) {
   val route: AccessTokenContent => Route = _ =>
@@ -30,14 +32,11 @@ class ProjectFileController(wdlService: ProjectFileService)(implicit val executi
           path("try") {
             fileName: String =>
               get {
-                // what should I change?
-                parameter('projectid.as[String], 'path.as[String]) {
-                  entity(as[ProjectGetFileRequest]) { request =>
-                    onComplete(wdlService.getFile(request.project, request.projectFile.path, request.version)) {
+                parameter('projectid.as[String], 'path.as[String], 'version.as[String]) { (projectid, path, version) =>
+                    onComplete(wdlService.getFile(projectid, Paths.get(path), version)) {
                       case Success(Left(e)) => complete(StatusCodes.InternalServerError, e.getMessage)
                       case Success(_)       => complete(StatusCodes.OK)
                       case Failure(e)       => complete(StatusCodes.InternalServerError, e.getMessage)
-                    }
                   }
                 }
               }

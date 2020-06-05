@@ -27,7 +27,7 @@ class ProjectFileService(womTool: WomToolAPI, projectVersioning: ProjectVersioni
   def getFile(
     project: Project,
     path: Path,
-    version: Option[Version]
+    version: Option[String]
   ): Future[Either[VersioningException, ProjectFile]] =
     projectVersioning.getFile(project, path, version)
 
