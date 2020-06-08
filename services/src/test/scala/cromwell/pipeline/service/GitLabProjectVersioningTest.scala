@@ -61,7 +61,7 @@ class GitLabProjectVersioningTest extends AsyncWordSpec with ScalaFutures with M
     }
 
     "getProjectVersions" should {
-      val dummyVersionsJson: String = s"[${Json.stringify(Json.toJson(dummyVersion))}]"
+      val dummyVersionsJson: String = s"[${Json.stringify(Json.toJson(dummyGitLabVersion))}]"
 
       def request(project: Project) =
         mockHttpClient.get(
@@ -73,7 +73,7 @@ class GitLabProjectVersioningTest extends AsyncWordSpec with ScalaFutures with M
         when(request(withRepoProject))
           .thenReturn(Future.successful(Response(HttpStatusCodes.OK, dummyVersionsJson, Map())))
         gitLabProjectVersioning.getProjectVersions(withRepoProject).map {
-          _ shouldBe Right(Seq(dummyVersion))
+          _ shouldBe Right(Seq(dummyGitLabVersion))
         }
       }
       "throw new VersioningException with 400 response" taggedAs Service in {
@@ -141,7 +141,7 @@ class GitLabProjectVersioningTest extends AsyncWordSpec with ScalaFutures with M
           .updateFile(
             withRepoProject,
             existFile,
-            Some(Version("v.0.0.2", "New version", "this project", Commit("commit_12")))
+            Some(PipelineVersion("v.0.0.2"))
           )
           .flatMap(_ shouldBe Right("Success update file"))
       }
@@ -151,7 +151,7 @@ class GitLabProjectVersioningTest extends AsyncWordSpec with ScalaFutures with M
       "return file with 200 response" taggedAs Service in {
         val project = TestProjectUtils.getDummyProject()
         val path = Paths.get("test.md")
-        val version = dummyVersion;
+        val version = PipelineVersion("version-name")
 
         when(
           mockHttpClient.get(
@@ -169,7 +169,7 @@ class GitLabProjectVersioningTest extends AsyncWordSpec with ScalaFutures with M
       "throw new VersioningException with not 200 response" taggedAs Service in {
         val project = TestProjectUtils.getDummyProject()
         val path = Paths.get("test.md")
-        val version = dummyVersion;
+        val version = PipelineVersion("version-name")
 
         when(
           mockHttpClient.get(
@@ -194,7 +194,7 @@ class GitLabProjectVersioningTest extends AsyncWordSpec with ScalaFutures with M
     lazy val noRepoProject: Project = activeProject.copy(repository = None)
     lazy val withRepoProject: Project =
       activeProject.withRepository(Some(s"${gitLabConfig.idPath}${activeProject.projectId.value}"))
-    lazy val dummyVersion: Version = TestProjectUtils.getDummyVersion()
+    lazy val dummyGitLabVersion: GitLabVersion = TestProjectUtils.getDummyGitLabVersion()
   }
 
   object ProjectFileContext {

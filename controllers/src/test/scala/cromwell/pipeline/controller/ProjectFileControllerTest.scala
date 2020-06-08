@@ -5,14 +5,7 @@ import java.nio.file.Paths
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import cromwell.pipeline.datastorage.dao.repository.utils.{ TestProjectUtils, TestUserUtils }
-import cromwell.pipeline.datastorage.dto.{
-  Commit,
-  FileContent,
-  ProjectFile,
-  ProjectUpdateFileRequest,
-  ValidationError,
-  Version
-}
+import cromwell.pipeline.datastorage.dto._
 import cromwell.pipeline.datastorage.utils.auth.AccessTokenContent
 import cromwell.pipeline.service.{ ProjectFileService, VersioningException }
 import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
@@ -49,7 +42,7 @@ class ProjectFileControllerTest extends AsyncWordSpec with Matchers with Scalate
     }
 
     "upload file" should {
-      val version = Version("v.0.0.2", "commit message", "this project", Commit("commit_12"))
+      val version = PipelineVersion("v.0.0.2")
       val accessToken = AccessTokenContent(TestUserUtils.getDummyUserId)
       val project = TestProjectUtils.getDummyProject()
       val projectFile = ProjectFile(Paths.get("folder/test.txt"), "file context")

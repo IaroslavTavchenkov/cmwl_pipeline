@@ -4,7 +4,7 @@ import java.net.URLEncoder
 import java.nio.file.Path
 
 import cromwell.pipeline.datastorage.dto.File.UpdateFileRequest
-import cromwell.pipeline.datastorage.dto.{ Project, ProjectFile, Version }
+import cromwell.pipeline.datastorage.dto.{ Commit, GitLabVersion, PipelineVersion, Project, ProjectFile }
 import cromwell.pipeline.utils.{ GitLabConfig, HttpStatusCodes }
 import play.api.libs.json.{ JsError, JsResult, JsSuccess, Json }
 
@@ -13,7 +13,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 class GitLabProjectVersioning(httpClient: HttpClient, config: GitLabConfig)
     extends ProjectVersioning[VersioningException] {
 
-  override def updateFile(project: Project, projectFile: ProjectFile, version: Option[Version])(
+  override def updateFile(project: Project, projectFile: ProjectFile, version: Option[PipelineVersion])(
     implicit ec: ExecutionContext
   ): AsyncResult[String] = {
     val path = URLEncoder.encode(projectFile.path.toString, "UTF-8")
@@ -48,6 +48,21 @@ class GitLabProjectVersioning(httpClient: HttpClient, config: GitLabConfig)
       }
   }
 
+  private def addTag(project: Project, version: GitLabVersion)(implicit ec: ExecutionContext): AsyncResult[String] = {
+    val tagUrl = s"${config.url}projects/${project.repository}/repository/tags"
+    httpClient
+      .post(
+        tagUrl,
+        params = Map("tag_name" -> version.name, "ref" -> version.commit.id),
+        headers = config.token,
+        payload = ""
+      )
+      .map {
+        case Response(HttpStatusCodes.OK, _, _) => Right("Tag was added")
+        case Response(_, body, _)               => Left(VersioningException(body))
+      }
+  }
+
   override def updateFiles(project: Project, projectFiles: ProjectFiles)(
     implicit ec: ExecutionContext
   ): AsyncResult[List[String]] = ???
@@ -70,7 +85,7 @@ class GitLabProjectVersioning(httpClient: HttpClient, config: GitLabConfig)
 
   override def getFiles(project: Project, path: Path)(implicit ec: ExecutionContext): AsyncResult[List[String]] = ???
 
-  override def getProjectVersions(project: Project)(implicit ec: ExecutionContext): AsyncResult[Seq[Version]] = {
+  override def getProjectVersions(project: Project)(implicit ec: ExecutionContext): AsyncResult[Seq[GitLabVersion]] = {
     val versionsListUrl: String = s"${config.url}projects/${project.repository.get.value}/repository/tags"
     httpClient
       .get(url = versionsListUrl, headers = config.token)
@@ -79,7 +94,7 @@ class GitLabProjectVersioning(httpClient: HttpClient, config: GitLabConfig)
           if (resp.status != HttpStatusCodes.OK)
             Left(VersioningException(s"Could not take versions. Response status: ${resp.status}"))
           else {
-            val parsedVersions: JsResult[Seq[Version]] = Json.parse(resp.body).validate[Seq[Version]]
+            val parsedVersions: JsResult[Seq[GitLabVersion]] = Json.parse(resp.body).validate[Seq[GitLabVersion]]
             parsedVersions match {
               case JsSuccess(value, _) => Right(value)
               case JsError(errors)     => Left(VersioningException(s"Could not parse GitLab response. (errors: $errors)"))
@@ -91,23 +106,23 @@ class GitLabProjectVersioning(httpClient: HttpClient, config: GitLabConfig)
 
   override def getFileVersions(project: Project, path: Path)(
     implicit ec: ExecutionContext
-  ): AsyncResult[List[Version]] = ???
+  ): AsyncResult[List[GitLabVersion]] = ???
 
   override def getFilesVersions(project: Project, path: Path)(
     implicit ec: ExecutionContext
-  ): AsyncResult[List[Version]] = ???
+  ): AsyncResult[List[GitLabVersion]] = ???
 
-  override def getFileTree(project: Project, version: Option[Version])(
+  override def getFileTree(project: Project, version: Option[PipelineVersion])(
     implicit ec: ExecutionContext
   ): AsyncResult[List[String]] = ???
 
-  override def getFile(project: Project, path: Path, version: Option[Version])(
+  override def getFile(project: Project, path: Path, version: Option[PipelineVersion])(
     implicit ec: ExecutionContext
   ): AsyncResult[ProjectFile] = {
     val filePath: String = URLEncoder.encode(path.toString, "UTF-8")
     val fileVersion: String = version match {
       case Some(version) => version.name
-      case None => config.defaultFileVersion
+      case None          => config.defaultFileVersion
     }
 
     httpClient

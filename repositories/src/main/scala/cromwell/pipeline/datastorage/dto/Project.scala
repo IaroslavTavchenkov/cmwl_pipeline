@@ -62,9 +62,14 @@ object ProjectUpdateRequest {
   implicit val updateRequestFormat: OFormat[ProjectUpdateRequest] = Json.format[ProjectUpdateRequest]
 }
 
-final case class Version(name: String, message: String, target: String, commit: Commit)
-object Version {
-  implicit val versionPlayFormat: OFormat[Version] = Json.format[Version]
+final case class GitLabVersion(name: String, message: String, target: String, commit: Commit)
+object GitLabVersion {
+  implicit val gitlabVersionFormat: OFormat[GitLabVersion] = Json.format[GitLabVersion]
+}
+
+final case class PipelineVersion(name: String)
+object PipelineVersion {
+  implicit val pipelineVersionFormat: OFormat[PipelineVersion] = Json.format[PipelineVersion]
 }
 
 final case class Commit(id: String)
@@ -115,12 +120,12 @@ object FileContent {
   implicit lazy val validateFileRequestFormat: OFormat[FileContent] = Json.format[FileContent]
 }
 
-final case class ProjectUpdateFileRequest(project: Project, projectFile: ProjectFile, version: Option[Version])
+final case class ProjectUpdateFileRequest(project: Project, projectFile: ProjectFile, version: Option[PipelineVersion])
 
 object ProjectUpdateFileRequest {
   implicit lazy val projectUpdateFileRequestFormat: OFormat[ProjectUpdateFileRequest] =
     ((JsPath \ "project").format[Project] ~ (JsPath \ "projectFile").format[ProjectFile] ~ (JsPath \ "version")
-      .formatNullable[Version])(
+      .formatNullable[PipelineVersion])(
       ProjectUpdateFileRequest.apply,
       unlift(ProjectUpdateFileRequest.unapply)
     )

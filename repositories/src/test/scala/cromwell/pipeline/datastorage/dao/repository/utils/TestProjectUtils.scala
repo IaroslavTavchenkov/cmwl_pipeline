@@ -19,10 +19,10 @@ object TestProjectUtils {
     visibility: Visibility = Private
   ): Project = Project(projectId, ownerId, name, active, repository, visibility)
   def getDummyCommit(id: String = randomUuidStr): Commit = Commit(id)
-  def getDummyVersion(
+  def getDummyGitLabVersion(
     name: String = s"name-$randomUuidStr",
     message: String = s"message-$randomUuidStr",
     target: String = s"target-$randomUuidStr",
     commit: Commit = getDummyCommit()
-  ): Version = Version(name, message, target, commit)
+  ): GitLabVersion = GitLabVersion(name, message, target, commit)
 }
