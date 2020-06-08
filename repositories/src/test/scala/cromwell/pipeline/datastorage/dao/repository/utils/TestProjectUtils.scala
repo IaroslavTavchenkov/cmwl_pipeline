@@ -41,6 +41,6 @@ object TestProjectUtils {
   ): GitLabVersion = GitLabVersion(version, message, target, commit)
   ): Version = Version(name, message, target, commit)
   def getDummyFileCommit(
-    commit_id: String = s"$randomUuidStr"
-  ): FileCommit = FileCommit(commit_id)
+    commitId: String = s"$randomUuidStr"
+  ): FileCommit = FileCommit(commitId)
 }

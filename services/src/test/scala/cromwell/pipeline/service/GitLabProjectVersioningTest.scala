@@ -186,11 +186,12 @@ class GitLabProjectVersioningTest extends AsyncWordSpec with ScalaFutures with M
     }
 
     "getFileCommits" should {
-      val dummyCommitJson: String = s"[${Json.stringify(Json.toJson(dummyFileCommit))}]"
+      val dummyCommitJson: String = s"${Json.stringify(Json.toJson(List(dummyFileCommit)))}"
       val path: Path = Paths.get("tmp/foo.txt")
+      val urlEncoder = URLEncoder.encode(path.toString, "UTF-8")
       def request(project: Project) =
         mockHttpClient.get(
-          url = gitLabConfig.url + "projects/" + project.repository.get.value + "/repository/files/" + path.toString,
+          url = s"${gitLabConfig.url}projects/${project.repository.get.value}/repository/files/${urlEncoder}",
           headers = gitLabConfig.token
         )
       "return list of Project versions with 200 response" taggedAs Service in {
@@ -211,16 +212,19 @@ class GitLabProjectVersioningTest extends AsyncWordSpec with ScalaFutures with M
 
     "getFileVersions" should {
       val dummyCommitJson: String = s"[${Json.stringify(Json.toJson(dummyFileCommit))}, ${Json.stringify(Json.toJson(dummyFileCommitAux))}]"
+      val dummyCommitJson: String = s"${Json.stringify(Json.toJson(List(dummyFileCommit, dummyFileCommitAux)))}"
       val dummyVersionsJson: String = s"[${Json.stringify(Json.toJson(dummyVersion))}]"
       val path: Path = Paths.get("tmp/foo.txt")
+      val urlEncoder = URLEncoder.encode(path.toString, "UTF-8")
+
       def projectVersionRequest(project: Project) =
         mockHttpClient.get(
-          url = gitLabConfig.url + "projects/" + project.repository.get.value + "/repository/tags",
+          url = s"${gitLabConfig.url}projects/${project.repository.get.value}/repository/tags",
           headers = gitLabConfig.token
         )
       def fileCommitsRequest(project: Project) =
         mockHttpClient.get(
-          url = gitLabConfig.url + "projects/" + project.repository.get.value + "/repository/files/" + path.toString,
+          url = s"${gitLabConfig.url}projects/${project.repository.get.value}/repository/files/${urlEncoder}",
           headers = gitLabConfig.token
         )
 

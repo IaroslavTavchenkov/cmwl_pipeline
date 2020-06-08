@@ -119,8 +119,9 @@ class GitLabProjectVersioning(httpClient: HttpClient, config: GitLabConfig)
   override def getFileCommits(project: Project, path: Path)(
     implicit ec: ExecutionContext
   ): AsyncResult[Seq[FileCommit]] = {
+    val urlEncoder = URLEncoder.encode(path.toString, "UTF-8")
     val commitsUrl: String =
-      s"${config.url}projects/${project.repository.get.value}/repository/files/${path.toString}"
+      s"${config.url}projects/${project.repository.get.value}/repository/files/${urlEncoder}"
     httpClient
       .get(url = commitsUrl, headers = config.token)
       .map(
@@ -153,7 +154,7 @@ class GitLabProjectVersioning(httpClient: HttpClient, config: GitLabConfig)
         Right(for {
           tagProject <- tagsProject
           tagFile <- tagsFiles
-          if tagFile.commit_id == tagProject.commit.id
+          if tagFile.commitId == tagProject.commit.id
         } yield tagProject)
       } else {
         Left(VersioningException(fileCommits.left.get.message))
