@@ -148,16 +148,15 @@ class GitLabProjectVersioning(httpClient: HttpClient, config: GitLabConfig)
       projectVersions <- getProjectVersions(project)
       fileCommits <- getFileCommits(project, path)
     } yield {
-      if (projectVersions.isRight && fileCommits.isRight) {
-        val tagsProject = projectVersions.right.get
-        val tagsFiles = fileCommits.right.get
-        Right(for {
-          tagProject <- tagsProject
-          tagFile <- tagsFiles
-          if tagFile.commitId == tagProject.commit.id
-        } yield tagProject)
-      } else {
-        Left(VersioningException(fileCommits.left.get.message))
+      (projectVersions, fileCommits) match {
+        case (Right(tagsProject), Right(tagsFiles)) =>
+          Right(for {
+            tagProject <- tagsProject
+            tagFile <- tagsFiles
+            if tagFile.commitId == tagProject.commit.id
+          } yield tagProject)
+        case (_, Left(exception)) => Left(VersioningException(exception.message))
+        case (Left(exception), _) => Left(VersioningException(exception.message))
       }
     }
 

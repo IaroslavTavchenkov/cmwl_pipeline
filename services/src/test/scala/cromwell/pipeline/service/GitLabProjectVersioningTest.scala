@@ -213,6 +213,7 @@ class GitLabProjectVersioningTest extends AsyncWordSpec with ScalaFutures with M
     "getFileVersions" should {
       val dummyCommitJson: String = s"[${Json.stringify(Json.toJson(dummyFileCommit))}, ${Json.stringify(Json.toJson(dummyFileCommitAux))}]"
       val dummyCommitJson: String = s"${Json.stringify(Json.toJson(List(dummyFileCommit, dummyFileCommitAux)))}"
+      val dummyCommitJson: String = s"${Json.stringify(Json.toJson(List(dummyFileCommit, dummyExistingFileCommit)))}"
       val dummyVersionsJson: String = s"[${Json.stringify(Json.toJson(dummyVersion))}]"
       val path: Path = Paths.get("tmp/foo.txt")
       val urlEncoder = URLEncoder.encode(path.toString, "UTF-8")
@@ -264,7 +265,7 @@ class GitLabProjectVersioningTest extends AsyncWordSpec with ScalaFutures with M
     lazy val dummyGitLabVersion: GitLabVersion = TestProjectUtils.getDummyGitLabVersion()
     lazy val dummyVersion: Version = TestProjectUtils.getDummyVersion()
     lazy val dummyFileCommit: FileCommit = TestProjectUtils.getDummyFileCommit()
-    lazy val dummyFileCommitAux: FileCommit = FileCommit(dummyVersion.commit.id)
+    lazy val dummyExistingFileCommit: FileCommit = FileCommit(dummyVersion.commit.id)
   }
 
   object ProjectFileContext {
