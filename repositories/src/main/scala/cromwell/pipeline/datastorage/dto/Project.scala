@@ -67,9 +67,31 @@ object GitLabVersion {
   implicit val gitlabVersionFormat: OFormat[GitLabVersion] = Json.format[GitLabVersion]
 }
 
-final case class PipelineVersion(name: String)
+final case class PipelineVersion private (v1: Int, v2: Int, v3: Int) extends Ordered[PipelineVersion] {
+  val name: String = s"v.$v1.$v2.$v3"
+
+  private val ordering: Ordering[PipelineVersion] =
+    Ordering[(Int, Int, Int)].on((pv: PipelineVersion) => (pv.v1, pv.v2, pv.v3))
+
+  override def compare(that: PipelineVersion): Int =
+    ordering.compare(this, that)
+
+  override def toString: String = this.name
+}
+
 object PipelineVersion {
-  implicit val pipelineVersionFormat: OFormat[PipelineVersion] = Json.format[PipelineVersion]
+  def apply(versionLine: String): PipelineVersion = {
+    val regex = """^v\.([1-9]\d*)\.(\d)\.(\d+)$""".r
+    versionLine match {
+      case regex(v1, v2, v3) => new PipelineVersion(v1.toInt, v2.toInt, v3.toInt)
+      case _                 => throw PipelineVersionException("Format of version name: 'v.(int).(int).(int)'")
+    }
+  }
+
+  final case class PipelineVersionException(message: String) extends RuntimeException
+
+  implicit val pipelineVersionFormat: Format[PipelineVersion] =
+    implicitly[Format[String]].inmap(PipelineVersion.apply, _.name)
 }
 
 final case class Commit(id: String)
