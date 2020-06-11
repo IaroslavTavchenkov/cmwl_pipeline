@@ -2,6 +2,7 @@ package cromwell.pipeline.datastorage.dto
 
 import java.nio.file.{ Path, Paths }
 
+import cromwell.pipeline.datastorage.dto.PipelineVersion.PipelineVersionException
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import cromwell.pipeline.model.wrapper.UserId
@@ -74,13 +75,16 @@ final case class PipelineVersion private (versions: Int*) extends Ordered[Pipeli
     val comparableV =
       for ((thisV, thatV) <- this.versions.zip(that.versions))
         yield thisV.compare(thatV)
-    comparableV.toList.find(i => i != 0) match {
-      case Some(value)                                          => value
-      case None if this.versions.length > that.versions.length  => 1
-      case None if this.versions.length < that.versions.length  => -1
-      case None if this.versions.length == that.versions.length => 0
+    comparableV.find(i => i != 0) match {
+      case Some(value) => value
+      case None        => this.versions.length.compare(that.versions.length)
     }
   }
+
+  def changeVersion(index: Int, value: Int): PipelineVersion =
+    if (index >= this.versions.length) throw PipelineVersionException("Out of bounds")
+    else if (value <= 0) throw PipelineVersionException("Version must be positive value")
+    else new PipelineVersion(this.versions.updated(index, value): _*)
 
   override def toString: String = this.name
 }

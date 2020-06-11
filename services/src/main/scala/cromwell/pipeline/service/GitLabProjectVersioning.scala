@@ -25,9 +25,9 @@ class GitLabProjectVersioning(httpClient: HttpClient, config: GitLabConfig)
 
     getProjectVersions(project).flatMap(versions => {
       val latestVersion: Either[VersioningException, PipelineVersion] = (version, versions) match {
-        case (Some(_), Left(error))                              => Left(error)
-        case (Some(tagName), Right(v :: _)) if v.name <= tagName => Right(tagName)
-        case (Some(tagName), Right(v :: _)) if v.name > tagName =>
+        case (Some(_), Left(error))                             => Left(error)
+        case (Some(tagName), Right(v :: _)) if v.name < tagName => Right(tagName)
+        case (Some(tagName), Right(v :: _)) if v.name >= tagName =>
           Left(VersioningException(s"Your version $tagName is out of date. Current version of project: ${v.name}"))
         case (Some(_), Right(_))   => Right(PipelineVersion(config.defaultFileVersion))
         case (None, Right(v :: _)) => Right(v.name)
