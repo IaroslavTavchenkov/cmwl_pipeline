@@ -29,7 +29,7 @@ class ProjectFileController(wdlService: ProjectFileService)(implicit val executi
         post {
           entity(as[ProjectUpdateFileRequest]) { request =>
             onComplete(wdlService.uploadFile(request.project, request.projectFile, request.version)) {
-              case Success(Left(e)) => complete(StatusCodes.ImATeapot, e.getMessage) // TODO: change status code
+              case Success(Left(e)) => complete(StatusCodes.UnprocessableEntity, e.getMessage)
               case Success(_)       => complete(StatusCodes.OK)
               case Failure(e)       => complete(StatusCodes.InternalServerError, e.getMessage)
             }
