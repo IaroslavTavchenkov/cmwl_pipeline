@@ -192,7 +192,7 @@ class GitLabProjectVersioningTest extends AsyncWordSpec with ScalaFutures with M
     lazy val withRepoProject: Project =
       activeProject.withRepository(Some(s"${gitLabConfig.idPath}${activeProject.projectId.value}"))
     lazy val dummyPipelineVersion: PipelineVersion = TestProjectUtils.getDummyPipeLineVersion()
-    lazy val dummyPipelineVersionHigher: PipelineVersion = dummyPipelineVersion.copy(v1 = dummyPipelineVersion.v1 + 1)
+    lazy val dummyPipelineVersionHigher: PipelineVersion = PipelineVersion(dummyPipelineVersion.name + "1")
     lazy val dummyGitLabVersion: GitLabVersion = TestProjectUtils.getDummyGitLabVersion()
   }
 

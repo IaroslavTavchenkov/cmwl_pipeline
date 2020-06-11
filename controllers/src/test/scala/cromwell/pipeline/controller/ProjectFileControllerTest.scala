@@ -60,7 +60,7 @@ class ProjectFileControllerTest extends AsyncWordSpec with Matchers with Scalate
         when(projectFileService.uploadFile(project, projectFile, Some(version)))
           .thenReturn(Future.successful(Left(VersioningException("Bad request"))))
         Post("/files", request) ~> projectFileController.route(accessToken) ~> check {
-          status shouldBe StatusCodes.ImATeapot // TODO: change status code
+          status shouldBe StatusCodes.UnprocessableEntity
           entityAs[String] shouldBe "Bad request"
         }
       }
