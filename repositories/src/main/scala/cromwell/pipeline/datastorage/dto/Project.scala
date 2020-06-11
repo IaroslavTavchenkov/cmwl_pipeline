@@ -62,7 +62,7 @@ object ProjectUpdateRequest {
   implicit val updateRequestFormat: OFormat[ProjectUpdateRequest] = Json.format[ProjectUpdateRequest]
 }
 
-final case class GitLabVersion(name: String, message: String, target: String, commit: Commit)
+final case class GitLabVersion(name: PipelineVersion, message: String, target: String, commit: Commit)
 object GitLabVersion {
   implicit val gitlabVersionFormat: OFormat[GitLabVersion] = Json.format[GitLabVersion]
 }
@@ -81,14 +81,14 @@ final case class PipelineVersion private (v1: Int, v2: Int, v3: Int) extends Ord
 
 object PipelineVersion {
   def apply(versionLine: String): PipelineVersion = {
-    val regex = """^v\.([1-9]\d*)\.(\d)\.(\d+)$""".r
+    val regex = """^v\.(\d+)\.(\d+)\.(\d+)$""".r
     versionLine match {
       case regex(v1, v2, v3) => new PipelineVersion(v1.toInt, v2.toInt, v3.toInt)
-      case _                 => throw PipelineVersionException("Format of version name: 'v.(int).(int).(int)'")
+      case _                 => throw PipelineVersionException(s"Format of version name: 'v.(int).(int).(int)' but got: $versionLine")
     }
   }
 
-  final case class PipelineVersionException(message: String) extends RuntimeException
+  final case class PipelineVersionException(message: String) extends Exception(message)
 
   implicit val pipelineVersionFormat: Format[PipelineVersion] =
     implicitly[Format[String]].inmap(PipelineVersion.apply, _.name)

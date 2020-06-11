@@ -5,8 +5,11 @@ import java.util.UUID
 import cromwell.pipeline.datastorage.dto._
 import cromwell.pipeline.model.wrapper.UserId
 
+import scala.util.Random
+
 object TestProjectUtils {
 
+  private def randomInt: Int = Random.nextInt()
   private def randomUuidStr: String = UUID.randomUUID().toString
   def getDummyProjectId: ProjectId = ProjectId(randomUuidStr)
   def getDummyRepository: Repository = Repository(s"repo-$randomUuidStr")
@@ -19,10 +22,16 @@ object TestProjectUtils {
     visibility: Visibility = Private
   ): Project = Project(projectId, ownerId, name, active, repository, visibility)
   def getDummyCommit(id: String = randomUuidStr): Commit = Commit(id)
+  def getDummyPipeLineVersion(
+    v1: Int = 1 + Random.nextInt(12),
+    v2: Int = 1 + Random.nextInt(12),
+    v3: Int = 1 + Random.nextInt(12)
+  ): PipelineVersion =
+    PipelineVersion(v1, v2, v3)
   def getDummyGitLabVersion(
-    name: String = s"name-$randomUuidStr",
+    version: PipelineVersion = getDummyPipeLineVersion(),
     message: String = s"message-$randomUuidStr",
     target: String = s"target-$randomUuidStr",
     commit: Commit = getDummyCommit()
-  ): GitLabVersion = GitLabVersion(name, message, target, commit)
+  ): GitLabVersion = GitLabVersion(version, message, target, commit)
 }

@@ -4,7 +4,7 @@ import java.net.URLEncoder
 import java.nio.file.Path
 
 import cromwell.pipeline.datastorage.dto.File.UpdateFileRequest
-import cromwell.pipeline.datastorage.dto.{ Commit, GitLabVersion, PipelineVersion, Project, ProjectFile }
+import cromwell.pipeline.datastorage.dto.{ GitLabVersion, PipelineVersion, Project, ProjectFile, Repository }
 import cromwell.pipeline.utils.{ GitLabConfig, HttpStatusCodes }
 import play.api.libs.json.{ JsError, JsResult, JsSuccess, Json }
 
@@ -17,43 +17,53 @@ class GitLabProjectVersioning(httpClient: HttpClient, config: GitLabConfig)
     implicit ec: ExecutionContext
   ): AsyncResult[String] = {
     val path = URLEncoder.encode(projectFile.path.toString, "UTF-8")
-    val fileUrl = s"${config.url}projects/${project.repository}/repository/files/$path"
-    val versionValue = version.map(_.name).getOrElse(config.defaultFileVersion)
+    val repositoryId: Repository = project.repository match {
+      case Some(repository) => repository
+      case None             => throw VersioningException(s"No repository for project: $project")
+    }
+    val fileUrl = s"${config.url}projects/${repositoryId.value}/repository/files/$path"
 
-    httpClient
-      .put(
-        fileUrl,
-        payload = Json.stringify(
-          Json.toJson(UpdateFileRequest(versionValue, projectFile.content, versionValue))
-        ),
-        headers = config.token
-      )
-      .flatMap {
-        case Response(HttpStatusCodes.OK, _, _) =>
-          Future.successful(Right("Success update file"))
-        case Response(HttpStatusCodes.BadRequest, _, _) =>
-          httpClient
-            .post(
-              fileUrl,
-              payload = Json.stringify(
-                Json.toJson(UpdateFileRequest(config.defaultFileVersion, projectFile.content, "Init commit"))
-              ),
-              headers = config.token
-            )
-            .map {
-              case Response(HttpStatusCodes.OK, _, _) => Right("Create new file")
-              case Response(_, body, _)               => Left(VersioningException(body))
-            }
-        case Response(_, body, _) => Future.successful(Left(VersioningException(body)))
+    getProjectVersions(project).flatMap(versions => {
+      val latestVersion: Either[VersioningException, PipelineVersion] = (version, versions) match {
+        case (Some(_), Left(error))                              => Left(error)
+        case (Some(tagName), Right(v :: _)) if v.name <= tagName => Right(tagName)
+        case (Some(tagName), Right(v :: _)) if v.name > tagName =>
+          Left(VersioningException(s"Your version $tagName is out of date. Current version of project: ${v.name}"))
+        case (Some(_), Right(_))   => Right(PipelineVersion(config.defaultFileVersion))
+        case (None, Right(v :: _)) => Right(v.name)
+        case (None, Right(Nil))    => Right(PipelineVersion(config.defaultFileVersion))
+        case (None, Left(error))   => Left(error)
       }
+      latestVersion match {
+        case Left(error) =>
+          Future.successful(Left(error))
+        case Right(tagName) =>
+          val payload =
+            Json.stringify(Json.toJson(UpdateFileRequest(projectFile.content, tagName.toString, config.defaultBranch)))
+          for {
+            updateResult <- httpClient.put(fileUrl, payload = payload, headers = config.token)
+            createResult <- httpClient.post(fileUrl, payload = payload, headers = config.token)
+            tagResult <- createTag(repositoryId, tagName)
+          } yield (updateResult, createResult, tagResult) match {
+            case (Response(HttpStatusCodes.OK, _, _), Response(HttpStatusCodes.BadRequest, _, _), Right(_)) =>
+              Right("Success update file")
+            case (Response(HttpStatusCodes.BadRequest, _, _), Response(HttpStatusCodes.OK, _, _), Right(_)) =>
+              Right("Success create file")
+            case (_, _, Left(error))          => Left(error)
+            case (_, Response(_, body, _), _) => Left(VersioningException(body))
+          }
+      }
+    })
   }
 
-  private def addTag(project: Project, version: GitLabVersion)(implicit ec: ExecutionContext): AsyncResult[String] = {
-    val tagUrl = s"${config.url}projects/${project.repository}/repository/tags"
+  private def createTag(projectId: Repository, version: PipelineVersion)(
+    implicit ec: ExecutionContext
+  ): AsyncResult[String] = {
+    val tagUrl = s"${config.url}projects/${projectId.value}/repository/tags"
     httpClient
       .post(
         tagUrl,
-        params = Map("tag_name" -> version.name, "ref" -> version.commit.id),
+        params = Map("tag_name" -> version.name, "ref" -> config.defaultBranch),
         headers = config.token,
         payload = ""
       )
@@ -94,7 +104,7 @@ class GitLabProjectVersioning(httpClient: HttpClient, config: GitLabConfig)
           if (resp.status != HttpStatusCodes.OK)
             Left(VersioningException(s"Could not take versions. Response status: ${resp.status}"))
           else {
-            val parsedVersions: JsResult[Seq[GitLabVersion]] = Json.parse(resp.body).validate[Seq[GitLabVersion]]
+            val parsedVersions: JsResult[Seq[GitLabVersion]] = Json.parse(resp.body).validate[List[GitLabVersion]]
             parsedVersions match {
               case JsSuccess(value, _) => Right(value)
               case JsError(errors)     => Left(VersioningException(s"Could not parse GitLab response. (errors: $errors)"))
