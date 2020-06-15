@@ -1,14 +1,16 @@
 package cromwell.pipeline.service
 
-import java.nio.file.Paths
+import java.nio.file.{Path, Paths}
 
 import cats.data.NonEmptyList
-import cromwell.pipeline.datastorage.dao.repository.utils.TestProjectUtils
-import cromwell.pipeline.datastorage.dto.{ FileContent, ProjectFile, ValidationError }
+import cromwell.pipeline.datastorage.dao.repository.utils.{TestProjectUtils, TestUserUtils}
+import cromwell.pipeline.datastorage.dto.{FileContent, PipelineVersion, ProjectFile, ValidationError}
+import cromwell.pipeline.datastorage.utils.auth.AccessTokenContent
+import cromwell.pipeline.utils.{ApplicationConfig, GitLabConfig}
 import cromwell.pipeline.womtool.WomTool
 import org.mockito.Matchers.any
 import org.mockito.Mockito.when
-import org.scalatest.{ AsyncWordSpec, Matchers }
+import org.scalatest.{AsyncWordSpec, Matchers}
 import org.scalatestplus.mockito.MockitoSugar
 import wom.executable.WomBundle
 
@@ -19,6 +21,7 @@ class ProjectFileServiceTest extends AsyncWordSpec with Matchers with MockitoSug
   private val womTool = mock[WomTool]
   private val projectVersioning = mock[ProjectVersioning[VersioningException]]
   private val projectFileService = new ProjectFileService(womTool, projectVersioning)
+  private val gitLabConfig: GitLabConfig = ApplicationConfig.load().gitLabConfig
 
   private val correctWdl = "task hello {}"
   private val incorrectWdl = "task hello {"
@@ -55,6 +58,42 @@ class ProjectFileServiceTest extends AsyncWordSpec with Matchers with MockitoSug
           .thenReturn(Future.successful(Left(VersioningException("Something wrong"))))
         projectFileService
           .uploadFile(project, projectFile, Some(version))
+          .map(_ shouldBe Left(VersioningException("Something wrong")))
+      }
+    }
+
+
+    "delete file" should {
+      val project = TestProjectUtils.getDummyProject()
+      val path: Path = Paths.get("test.md")
+      val branchName: String = gitLabConfig.defaultBranch
+      val commitMessage: String = s"$path file has been deleted from $branchName"
+
+      "return success message for request" taggedAs Service in {
+        when(projectVersioning.deleteFile(project, path, branchName, commitMessage))
+          .thenReturn(Future.successful(Right("Success")))
+        projectFileService.deleteFile(project, path, branchName, commitMessage).map(_ shouldBe Right("Success"))
+      }
+
+      "return error message for error request" taggedAs Service in {
+        when(projectVersioning.deleteFile(project, path, branchName, commitMessage))
+          .thenReturn(Future.successful(Left(VersioningException("Something wrong"))))
+        projectFileService
+          .deleteFile(project, path, branchName, commitMessage)
+          .map(_ shouldBe Left(VersioningException("Something wrong")))
+      }
+    }
+
+    "get file" should {
+      val project = TestProjectUtils.getDummyProject()
+      val file = Paths.get("folder/test.txt")
+      val version = Some(PipelineVersion("v.0.0.2"))
+
+      "return success message for request" taggedAs Service in {
+        when(projectVersioning.getFile(project, file, version))
+          .thenReturn(Future.successful(Right(ProjectFile(file, ("Success")))))
+        projectFileService
+          .getFile(project, file, version)
           .map(_ shouldBe Left(VersioningException("Something wrong")))
       }
     }

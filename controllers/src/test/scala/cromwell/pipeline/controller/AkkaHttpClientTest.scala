@@ -68,6 +68,41 @@ class AkkaHttpClientTest extends AsyncWordSpec with Matchers with MockitoSugar w
       }
     }
 
+    "delete" should {
+      "return OK response status" taggedAs Controller in {
+        val response = aResponse().withStatus(200)
+        wireMockServer.stubFor(delete(urlEqualTo("/delete")).willReturn(response))
+
+        val delete_url = s"${wireMockServer.baseUrl()}/delete"
+        val headers = Map("Language" -> "eng")
+
+        client.delete(delete_url, headers).flatMap(_.status shouldBe StatusCodes.OK.intValue)
+      }
+
+      "return response with body" taggedAs Controller in {
+        val response = aResponse().withBody("Value").withStatus(200)
+        wireMockServer.stubFor(delete(urlEqualTo("/delete")).willReturn(response))
+
+        val delete_url = s"${wireMockServer.baseUrl()}/delete"
+        val headers = Map("Language" -> "eng")
+
+        client.delete(delete_url, headers).flatMap(_.body shouldBe "Value")
+      }
+
+//      "return response with headers" taggedAs Controller in {
+//        val response = aResponse().withHeader("TestKey", "TestValue").withStatus(200)
+//        wireMockServer.stubFor(get(urlEqualTo("/get?id=1")).willReturn(response))
+//
+//        val get_url = s"${wireMockServer.baseUrl()}/get"
+//        val params = Map("id" -> "1")
+//        val headers = Map("Language" -> "eng")
+//
+//        client
+//          .get(get_url, params, headers)
+//          .flatMap(_.headers.getOrElse("TestKey", List("failed")) shouldBe List("TestValue"))
+//      }
+    }
+
     "post" should {
       "return OK response status" taggedAs Controller in {
         val response = aResponse().withStatus(200)
