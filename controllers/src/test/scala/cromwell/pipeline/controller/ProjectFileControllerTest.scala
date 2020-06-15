@@ -65,5 +65,21 @@ class ProjectFileControllerTest extends AsyncWordSpec with Matchers with Scalate
         }
       }
     }
+
+    "get file" should {
+      val version = PipelineVersion("v.0.0.2")
+      val accessToken = AccessTokenContent(TestUserUtils.getDummyUserId)
+      val project = TestProjectUtils.getDummyProject()
+      val projectId = TestProjectUtils.getDummyProject().projectId
+      val projectFile = ProjectFile(Paths.get("folder/test.txt"), "file context")
+
+      "return OK response for valid request" taggedAs Controller in {
+        when(projectFileService.getFile(project, projectFile.path, Some(version)))
+          .thenReturn(Future.successful(Right(projectFile)))
+        Get(s"/files/try?$projectId&$projectFile") ~> projectFileController.route(accessToken) ~> check {
+          status shouldBe StatusCodes.OK
+        }
+      }
+    }
   }
 }

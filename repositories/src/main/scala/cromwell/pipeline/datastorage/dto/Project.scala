@@ -142,6 +142,17 @@ object FileContent {
   implicit lazy val validateFileRequestFormat: OFormat[FileContent] = Json.format[FileContent]
 }
 
+final case class ProjectGetFileRequest(project: Project, projectFile: ProjectFile, version: Option[PipelineVersion])
+
+object ProjectGetFileRequest {
+  implicit lazy val projectGetFileRequestFormat: OFormat[ProjectGetFileRequest] =
+    ((JsPath \ "project").format[Project] ~ (JsPath \ "projectFile").format[ProjectFile] ~ (JsPath \ "version")
+      .formatNullable[PipelineVersion])(
+      ProjectGetFileRequest.apply,
+      unlift(ProjectGetFileRequest.unapply)
+    )
+}
+
 final case class ProjectUpdateFileRequest(project: Project, projectFile: ProjectFile, version: Option[PipelineVersion])
 
 object ProjectUpdateFileRequest {
