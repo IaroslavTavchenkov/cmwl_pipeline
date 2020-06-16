@@ -5,15 +5,18 @@ import java.nio.file.Paths
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import cromwell.pipeline.datastorage.dto.{FileContent, ProjectId, ProjectUpdateFileRequest}
+import akka.http.scaladsl.server.RouteResult.Complete
+import cromwell.pipeline.datastorage.dto.{ FileContent, PipelineVersion, ProjectId, ProjectUpdateFileRequest }
 import cromwell.pipeline.datastorage.utils.auth.AccessTokenContent
-import cromwell.pipeline.service.ProjectFileService
+import cromwell.pipeline.service.{ ProjectFileService, ProjectService }
 import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
 import scala.concurrent.ExecutionContext
-import scala.util.{Failure, Success}
+import scala.util.{ Failure, Success }
 
-class ProjectFileController(wdlService: ProjectFileService)(implicit val executionContext: ExecutionContext) {
+class ProjectFileController(wdlService: ProjectFileService, projectService: ProjectService)(
+  implicit val executionContext: ExecutionContext
+) {
   val route: AccessTokenContent => Route = _ =>
     concat(
       path("files" / "validation") {
@@ -29,17 +32,27 @@ class ProjectFileController(wdlService: ProjectFileService)(implicit val executi
       },
       path("files") {
         concat(
-          path("try") {
-            fileName: String =>
-              get {
-                parameter('projectid.as[ProjectId], 'path.as[String], 'version.as[String]) { (projectid, path, version) =>
-                  onComplete(wdlService.getFile(projectid, Paths.get(path), version)) {
-                    case Success(Left(e)) => complete(StatusCodes.InternalServerError, e.getMessage)
-                    case Success(_)       => complete(StatusCodes.OK)
-                    case Failure(e)       => complete(StatusCodes.InternalServerError, e.getMessage)
-                  }
+          get {
+            parameter('projectId.as[String], 'path.as[String], 'version.as[String]) {
+              (projectId, path, version) =>
+                onComplete(projectService.getProjectById(ProjectId(projectId))).map {
+                  case Success(Some(project)) =>
+                    wdlService
+                      .getFile(project, Paths.get(path), Some(PipelineVersion(version)))
+                      .map {
+                        case Left(e)  => complete(StatusCodes.InternalServerError, e.getMessage)
+                        case Right(_) => complete(StatusCodes.OK)
+                      }
+                      .recover { case e: Throwable => complete(StatusCodes.InternalServerError, e.getMessage) }
                 }
-              }
+
+                onComplete(wdlService.getFile(projectService.getProjectById(project), Paths.get(path), version)) {
+                  case Success(Left(e)) => complete(StatusCodes.InternalServerError, e.getMessage)
+                  case Success(_)       => complete(StatusCodes.OK)
+                  case Failure(e)       => complete(StatusCodes.InternalServerError, e.getMessage)
+                }
+
+            }
           },
           post {
             entity(as[ProjectUpdateFileRequest]) { request =>

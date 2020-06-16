@@ -12,11 +12,11 @@ class ProjectFileService(womTool: WomToolAPI, projectVersioning: ProjectVersioni
 ) {
 
   def getFile(
-    projectId: ProjectId,
+    project: Project,
     path: Path,
     version: Option[PipelineVersion]
   ): Future[Either[VersioningException, ProjectFile]] =
-    projectVersioning.getFile(projectId, path, version)
+    projectVersioning.getFile(project, path, version)
 
   def validateFile(fileContent: FileContent): Future[Either[ValidationError, Unit]] =
     Future(womTool.validate(fileContent.content)).map {
