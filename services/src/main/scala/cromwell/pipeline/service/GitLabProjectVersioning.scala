@@ -93,6 +93,8 @@ class GitLabProjectVersioning(httpClient: HttpClient, config: GitLabConfig)
         .recover { case e: Throwable => Left(VersioningException(e.getMessage)) }
     }
 
+  override def deleteFile(project: Project, path: Path)(implicit ec: ExecutionContext): AsyncResult[List[String]] = ???
+
   override def getFiles(project: Project, path: Path)(implicit ec: ExecutionContext): AsyncResult[List[String]] = ???
 
   override def getProjectVersions(project: Project)(implicit ec: ExecutionContext): AsyncResult[Seq[GitLabVersion]] = {
