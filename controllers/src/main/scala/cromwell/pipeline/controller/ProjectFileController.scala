@@ -41,7 +41,7 @@ class ProjectFileController(wdlService: ProjectFileService, projectService: Proj
           get {
             parameter('projectId.as[String], 'path.as[String], 'version.as[String]) {
               (projectId, path, version) =>
-                onComplete(projectService.getProjectById(ProjectId(projectId)).map {
+                onComplete(projectService.getProjectById(ProjectId(projectId)).flatMap {
                   case Some(project) =>
                     val future: Future[Either[VersioningException, ProjectFile]] =
                       wdlService.getFile(project, Paths.get(path), Some(PipelineVersion(version)))
@@ -51,11 +51,9 @@ class ProjectFileController(wdlService: ProjectFileService, projectService: Proj
                       Future.successful(Left(VersioningException(s"Project with ID $projectId does not exist")))
                     future
                 }) {
-                  case Failure(exception)                    =>
-                  case Success(Left(e: VersioningException)) =>
-                  //                  case Success(Left(e)) => complete(StatusCodes.ImATeapot, e.getMessage)
-                  //                  case Success(_)       => complete(StatusCodes.OK)
-                  //                  case Failure(e)       => complete(StatusCodes.InternalServerError, e.getMessage)
+                  case Success(Left(e)) => complete(StatusCodes.UnprocessableEntity, e.getMessage) // see err maybe 404
+                  case Success(_)       => complete(StatusCodes.OK)
+                  case Failure(e)       => complete(StatusCodes.InternalServerError, e.getMessage)
                 }
             }
           },
