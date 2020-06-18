@@ -93,7 +93,14 @@ class GitLabProjectVersioning(httpClient: HttpClient, config: GitLabConfig)
         .recover { case e: Throwable => Left(VersioningException(e.getMessage)) }
     }
 
-  override def deleteFile(project: Project, path: Path)(implicit ec: ExecutionContext): AsyncResult[List[String]] = ???
+  override def deleteFile(project: Project, path: Path, branchName: String = config.defaultBranch, commitMessage: String)(
+    implicit ec: ExecutionContext
+  ): AsyncResult[List[String]] = {
+
+    val filePath: String = URLEncoder.encode(path.toString, "UTF-8")
+
+
+  }
 
   override def getFiles(project: Project, path: Path)(implicit ec: ExecutionContext): AsyncResult[List[String]] = ???
 
