@@ -24,7 +24,7 @@ trait ProjectVersioning[E >: VersioningException] {
 
   def deleteFile(project: Project, path: Path, branchName: String, commitMessage: String)(
     implicit ec: ExecutionContext
-  ): AsyncResult[List[String]]
+  ): AsyncResult[String]
 
   def getFiles(project: Project, path: Path)(
     implicit ec: ExecutionContext
