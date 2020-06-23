@@ -106,7 +106,10 @@ class GitLabProjectVersioning(httpClient: HttpClient, config: GitLabConfig)
     val deleteMessage: String = s"$filePath file has been deleted from $branchName"
 
     httpClient
-      .delete(filePath, config.token)
+      .delete(
+        s"${config.url}/projects/${project.repository}/repository/files/$filePath/raw",
+        config.token
+      )
       .map { resp =>
         resp.status match {
           case HttpStatusCodes.OK => Right(deleteMessage)
