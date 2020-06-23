@@ -57,13 +57,14 @@ class ProjectFileController(wdlService: ProjectFileService, projectService: Proj
                 }
             }
           },
-          post {
-            entity(as[ProjectUpdateFileRequest]) { request =>
-              onComplete(wdlService.uploadFile(request.project, request.projectFile, request.version)) {
-                case Success(Left(e)) => complete(StatusCodes.ImATeapot, e.getMessage) // TODO: change status code
-                case Success(_)       => complete(StatusCodes.OK)
-                case Failure(e)       => complete(StatusCodes.InternalServerError, e.getMessage)
-              }
+          delete {
+            parameter('projectId.as[String], 'path.as[String]) {
+              (projectId, path) =>
+                projectService.getProjectById(ProjectId(projectId)).flatMap {
+                  case Some(project) =>
+                    val future: Future[Either[VersioningException, ProjectFile]] =
+                      wdlService.deleteFile
+                }
             }
           }
         )
