@@ -10,7 +10,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 class ProjectFileService(womTool: WomToolAPI, projectVersioning: ProjectVersioning[VersioningException])(
   implicit executionContext: ExecutionContext
 ) {
-  def deleteFile:(
+  def deleteFile(
     project: Project,
     path: Path,
     branchName: String,

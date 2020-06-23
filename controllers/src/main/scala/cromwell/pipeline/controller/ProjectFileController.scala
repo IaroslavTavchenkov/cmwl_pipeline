@@ -58,12 +58,12 @@ class ProjectFileController(wdlService: ProjectFileService, projectService: Proj
             }
           },
           delete {
-            parameter('projectId.as[String], 'path.as[String]) {
-              (projectId, path) =>
+            parameter('projectId.as[String], 'path.as[String], 'branchName.as[String], 'commitMessage.as[String]) {
+              (projectId, path, branchName, commitMessage) =>
                 projectService.getProjectById(ProjectId(projectId)).flatMap {
                   case Some(project) =>
                     val future: Future[Either[VersioningException, ProjectFile]] =
-                      wdlService.deleteFile
+                      wdlService.deleteFile()
                 }
             }
           }
