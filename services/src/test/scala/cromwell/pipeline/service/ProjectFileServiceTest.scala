@@ -4,11 +4,11 @@ import java.nio.file.Paths
 
 import cats.data.NonEmptyList
 import cromwell.pipeline.datastorage.dao.repository.utils.TestProjectUtils
-import cromwell.pipeline.datastorage.dto.{ FileContent, ProjectFile, ValidationError }
+import cromwell.pipeline.datastorage.dto.{FileContent, PipelineVersion, ProjectFile, ValidationError}
 import cromwell.pipeline.womtool.WomTool
 import org.mockito.Matchers.any
 import org.mockito.Mockito.when
-import org.scalatest.{ AsyncWordSpec, Matchers }
+import org.scalatest.{AsyncWordSpec, Matchers}
 import org.scalatestplus.mockito.MockitoSugar
 import wom.executable.WomBundle
 
