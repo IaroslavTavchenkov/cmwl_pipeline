@@ -4,20 +4,21 @@ import java.nio.file.Paths
 
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import cromwell.pipeline.datastorage.dao.repository.utils.{ TestProjectUtils, TestUserUtils }
+import cromwell.pipeline.datastorage.dao.repository.utils.{TestProjectUtils, TestUserUtils}
 import cromwell.pipeline.datastorage.dto._
 import cromwell.pipeline.datastorage.utils.auth.AccessTokenContent
-import cromwell.pipeline.service.{ ProjectFileService, VersioningException }
+import cromwell.pipeline.service.{ProjectFileService, ProjectService, VersioningException}
 import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 import org.mockito.Mockito.when
-import org.scalatest.{ AsyncWordSpec, Matchers }
+import org.scalatest.{AsyncWordSpec, Matchers}
 import org.scalatestplus.mockito.MockitoSugar
 
 import scala.concurrent.Future
 
 class ProjectFileControllerTest extends AsyncWordSpec with Matchers with ScalatestRouteTest with MockitoSugar {
   private val projectFileService: ProjectFileService = mock[ProjectFileService]
-  private val projectFileController = new ProjectFileController(projectFileService)
+  private val projectService: ProjectService = mock[ProjectService]
+  private val projectFileController = new ProjectFileController(projectFileService, projectService)
 
   "ProjectFileController" when {
     "validate file" should {

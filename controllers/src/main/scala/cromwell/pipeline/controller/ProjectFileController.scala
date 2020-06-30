@@ -76,10 +76,19 @@ class ProjectFileController(wdlService: ProjectFileService, projectService: Proj
           delete {
             parameter('projectId.as[String], 'path.as[String], 'branchName.as[String], 'commitMessage.as[String]) {
               (projectId, path, branchName, commitMessage) =>
-                projectService.getProjectById(ProjectId(projectId)).flatMap {
+                onComplete(projectService.getProjectById(ProjectId(projectId)).flatMap {
                   case Some(project) =>
-                    val future: Future[Either[VersioningException, ProjectFile]] =
-                      wdlService.deleteFile()
+                    val future: Future[Either[VersioningException, String]] =
+                      wdlService.deleteFile(project, Paths.get(path), branchName, commitMessage)
+                    future
+                  case None =>
+                    val future: Future[Either[VersioningException, String]] =
+                      Future.successful(Left(VersioningException(s"Project with ID $projectId does not exist")))
+                    future
+                }) {
+                  case Success(Left(e)) => complete(StatusCodes.UnprocessableEntity, e.getMessage) // see err maybe 404
+                  case Success(_)       => complete(StatusCodes.OK)
+                  case Failure(e)       => complete(StatusCodes.InternalServerError, e.getMessage)
                 }
             }
           }
