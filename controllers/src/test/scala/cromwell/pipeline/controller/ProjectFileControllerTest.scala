@@ -9,6 +9,7 @@ import cromwell.pipeline.datastorage.dao.repository.utils.{TestProjectUtils, Tes
 import cromwell.pipeline.datastorage.dto._
 import cromwell.pipeline.datastorage.utils.auth.AccessTokenContent
 import cromwell.pipeline.service.{ProjectFileService, ProjectService, VersioningException}
+import cromwell.pipeline.utils.{ApplicationConfig, GitLabConfig}
 import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 import org.mockito.Mockito.when
 import org.scalatest.{AsyncWordSpec, Matchers}
@@ -20,6 +21,7 @@ class ProjectFileControllerTest extends AsyncWordSpec with Matchers with Scalate
   private val projectFileService: ProjectFileService = mock[ProjectFileService]
   private val projectService: ProjectService = mock[ProjectService]
   private val projectFileController = new ProjectFileController(projectFileService, projectService)
+  private val gitLabConfig: GitLabConfig = ApplicationConfig.load().gitLabConfig
 
   "ProjectFileController" when {
     "validate file" should {
@@ -99,7 +101,7 @@ class ProjectFileControllerTest extends AsyncWordSpec with Matchers with Scalate
     "delete file" should {
       val accessToken = AccessTokenContent(TestUserUtils.getDummyUserId)
       val project = TestProjectUtils.getDummyProject()
-      val projectId = TestProjectUtils.getDummyProject().projectId
+//      val projectId = TestProjectUtils.getDummyProject().projectId
       val path: Path = Paths.get("test.md")
       val branchName: String = gitLabConfig.defaultBranch
       val commitMessage: String = s"$path file has been deleted from $branchName"

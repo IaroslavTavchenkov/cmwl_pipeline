@@ -64,8 +64,6 @@ class ProjectFileServiceTest extends AsyncWordSpec with Matchers with MockitoSug
 
     "delete file" should {
       val project = TestProjectUtils.getDummyProject()
-//      val projectFile = ProjectFile(Paths.get("test.txt"), "File content")
-//      val version = PipelineVersion("version name")
       val path: Path = Paths.get("test.md")
       val branchName: String = gitLabConfig.defaultBranch
       val commitMessage: String = s"$path file has been deleted from $branchName"
@@ -83,6 +81,10 @@ class ProjectFileServiceTest extends AsyncWordSpec with Matchers with MockitoSug
           .deleteFile(project, path, branchName, commitMessage)
           .map(_ shouldBe Left(VersioningException("Something wrong")))
       }
+    }
+
+    "get file" should {
+
     }
   }
 }
