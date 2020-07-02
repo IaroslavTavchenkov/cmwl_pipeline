@@ -71,7 +71,7 @@ class AkkaHttpClientTest extends AsyncWordSpec with Matchers with MockitoSugar w
     "delete" should {
       "return OK response status" taggedAs Controller in {
         val response = aResponse().withStatus(200)
-        wireMockServer.stubFor(delete(urlEqualTo("/delete?id=1")).willReturn(response))
+        wireMockServer.stubFor(delete(urlEqualTo("/delete")).willReturn(response))
 
         val delete_url = s"${wireMockServer.baseUrl()}/delete"
         val headers = Map("Language" -> "eng")
@@ -81,12 +81,12 @@ class AkkaHttpClientTest extends AsyncWordSpec with Matchers with MockitoSugar w
 
       "return response with body" taggedAs Controller in {
         val response = aResponse().withBody("Value").withStatus(200)
-        wireMockServer.stubFor(delete(urlEqualTo("/delete?id=1")).willReturn(response))
+        wireMockServer.stubFor(delete(urlEqualTo("/delete")).willReturn(response))
 
         val delete_url = s"${wireMockServer.baseUrl()}/delete"
         val headers = Map("Language" -> "eng")
 
-        client.get(delete_url, headers).flatMap(_.body shouldBe "Value")
+        client.delete(delete_url, headers).flatMap(_.body shouldBe "Value")
       }
 
 //      "return response with headers" taggedAs Controller in {

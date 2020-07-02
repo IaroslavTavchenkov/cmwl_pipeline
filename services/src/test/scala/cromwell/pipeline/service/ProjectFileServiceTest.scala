@@ -66,13 +66,13 @@ class ProjectFileServiceTest extends AsyncWordSpec with Matchers with MockitoSug
       val version = PipelineVersion("version name")
 
       "return success message for request" taggedAs Service in {
-        when(projectVersioning.updateFile(project, projectFile, Some(version)))
+        when(projectVersioning.deleteFile(project, projectFile, Some(version)))
           .thenReturn(Future.successful(Right("Success")))
         projectFileService.uploadFile(project, projectFile, Some(version)).map(_ shouldBe Right("Success"))
       }
 
       "return error message for error request" taggedAs Service in {
-        when(projectVersioning.updateFile(project, projectFile, Some(version)))
+        when(projectVersioning.deleteFile(project, projectFile, Some(version)))
           .thenReturn(Future.successful(Left(VersioningException("Something wrong"))))
         projectFileService
           .uploadFile(project, projectFile, Some(version))
