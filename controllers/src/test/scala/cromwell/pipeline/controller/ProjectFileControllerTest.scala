@@ -96,22 +96,22 @@ class ProjectFileControllerTest extends AsyncWordSpec with Matchers with Scalate
       }
     }
 
-//    "delete file" should {
-//      val accessToken = AccessTokenContent(TestUserUtils.getDummyUserId)
-//      val project = TestProjectUtils.getDummyProject()
-//      val projectId = TestProjectUtils.getDummyProject().projectId
-//      val path: Path = Paths.get("test.md")
-//      val branchName: String = gitLabConfig.defaultBranch
-//      val commitMessage: String = s"$path file has been deleted from $branchName"
-//
-//      "return OK response for valid request" taggedAs Controller in {
-//        when(projectFileService.deleteFile(project, path, branchName, commitMessage)).
-//          thenReturn(Future.successful(Right("Success")))
-//        Delete(s"${gitLabConfig.url}/projects/${activeProject.repository}/repository/files/${URLEncoder
-//          .encode(path.toString, "UTF-8")}/raw") ~> projectFileController.route(accessToken) ~> check {
-//          status shouldBe StatusCodes.OK
-//        }
-//      }
-//    }
+    "delete file" should {
+      val accessToken = AccessTokenContent(TestUserUtils.getDummyUserId)
+      val project = TestProjectUtils.getDummyProject()
+      val projectId = TestProjectUtils.getDummyProject().projectId
+      val path: Path = Paths.get("test.md")
+      val branchName: String = gitLabConfig.defaultBranch
+      val commitMessage: String = s"$path file has been deleted from $branchName"
+
+      "return OK response for valid request" taggedAs Controller in {
+        when(projectFileService.deleteFile(project, path, branchName, commitMessage)).
+          thenReturn(Future.successful(Right("Success")))
+        Delete(s"${gitLabConfig.url}/projects/${activeProject.repository}/repository/files/${URLEncoder
+          .encode(path.toString, "UTF-8")}/raw") ~> projectFileController.route(accessToken) ~> check {
+          status shouldBe StatusCodes.OK
+        }
+      }
+    }
   }
 }
