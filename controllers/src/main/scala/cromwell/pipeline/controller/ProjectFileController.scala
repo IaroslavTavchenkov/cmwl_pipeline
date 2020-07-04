@@ -10,7 +10,10 @@ import cromwell.pipeline.datastorage.dto.{
   FileContent,
   PipelineVersion,
   ProjectFile,
-  ProjectId, ProjectUpdateFileRequest, ValidationError }
+  ProjectId,
+  ProjectUpdateFileRequest,
+  ValidationError
+}
 import cromwell.pipeline.datastorage.utils.auth.AccessTokenContent
 import cromwell.pipeline.service.{ ProjectFileService, ProjectService, VersioningException }
 import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
@@ -35,25 +38,25 @@ class ProjectFileController(wdlService: ProjectFileService, projectService: Proj
         }
       },
       path("files") {
-        post {
-          entity(as[ProjectUpdateFileRequest]) {
-            request =>
-              onComplete(for {
-                validateResponse <- wdlService.validateFile(FileContent(request.projectFile.content))
-                uploadResponse <- wdlService.uploadFile(request.project, request.projectFile, request.version)
-              } yield {
-                (validateResponse, uploadResponse) match {
-                  case (Right(_), Right(response)) => StatusCodes.OK.intValue -> response
-                  case (Left(_), Right(response))  => StatusCodes.Created.intValue -> response
-                  case (_, Left(response))         => StatusCodes.UnprocessableEntity.intValue -> response.message
-                }
-              }) {
-                case Success((status, message)) => complete(status, message)
-                case Failure(e)                 => complete(StatusCodes.InternalServerError, e.getMessage)
-              }
-          }
-        }
         concat(
+          post {
+            entity(as[ProjectUpdateFileRequest]) {
+              request =>
+                onComplete(for {
+                  validateResponse <- wdlService.validateFile(FileContent(request.projectFile.content))
+                  uploadResponse <- wdlService.uploadFile(request.project, request.projectFile, request.version)
+                } yield {
+                  (validateResponse, uploadResponse) match {
+                    case (Right(_), Right(response)) => StatusCodes.OK.intValue -> response
+                    case (Left(_), Right(response))  => StatusCodes.Created.intValue -> response
+                    case (_, Left(response))         => StatusCodes.UnprocessableEntity.intValue -> response.message
+                  }
+                }) {
+                  case Success((status, message)) => complete(status, message)
+                  case Failure(e)                 => complete(StatusCodes.InternalServerError, e.getMessage)
+                }
+            }
+          },
           get {
             parameter('projectId.as[String], 'path.as[String], 'version.as[String]) {
               (projectId, path, version) =>
@@ -61,14 +64,9 @@ class ProjectFileController(wdlService: ProjectFileService, projectService: Proj
                 println(path)
                 println(version)
                 onComplete(projectService.getProjectById(ProjectId(projectId)).flatMap {
-                  case Some(project) =>
-                    val future: Future[Either[VersioningException, ProjectFile]] =
-                      wdlService.getFile(project, Paths.get(path), Some(PipelineVersion(version)))
-                    future
+                  case Some(project) => wdlService.getFile(project, Paths.get(path), Some(PipelineVersion(version)))
                   case None =>
-                    val future: Future[Either[VersioningException, ProjectFile]] =
-                      Future.successful(Left(VersioningException(s"Project with ID $projectId does not exist")))
-                    future
+                    Future.successful(Left(VersioningException(s"Project with ID $projectId does not exist")))
                 }) {
                   case Success(Left(e)) => complete(StatusCodes.UnprocessableEntity, e.getMessage) // see err maybe 404
                   case Success(_)       => complete(StatusCodes.OK)
